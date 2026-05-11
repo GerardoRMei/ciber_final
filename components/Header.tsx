@@ -18,23 +18,6 @@ export default function Header() {
             </p>
           </div>
         </Link>
-
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-
-          <Link href="/assessment" className="hover:text-slate-900">
-            Evaluación
-          </Link>
-          <Link href="/report" className="hover:text-slate-900">
-            Reporte
-          </Link>
-        </nav>
-
-        <Link
-          href="/assessment"
-          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          Iniciar
-        </Link>
       </div>
     </header>
   );
