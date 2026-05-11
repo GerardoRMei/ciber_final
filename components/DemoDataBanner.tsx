@@ -28,7 +28,7 @@ export default function DemoDataBanner({
             <button
               type="button"
               onClick={onClear}
-              className="rounded-xl border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100"
+              className="cursor-pointer rounded-xl border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100"
             >
               Limpiar
             </button>
@@ -37,7 +37,7 @@ export default function DemoDataBanner({
           <button
             type="button"
             onClick={onLoadDemo}
-            className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+            className="cursor-pointer rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
           >
             Cargar demo
           </button>

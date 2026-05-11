@@ -81,7 +81,7 @@ export default function QuestionCard({
                 key={option.value}
                 type="button"
                 onClick={() => onChange(question.id, option.value)}
-                className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+                className={`cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
                   isSelected
                     ? "border-slate-900 bg-slate-900 text-white "
                     : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-400 hover:bg-white"

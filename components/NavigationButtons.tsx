@@ -26,7 +26,7 @@ export default function NavigationButtons({
           <button
             type="button"
             onClick={onBack}
-            className="w-full rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+            className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
           >
             {backLabel}
           </button>
@@ -38,7 +38,7 @@ export default function NavigationButtons({
           <button
             type="button"
             onClick={onGenerate}
-            className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-auto"
+            className="w-full cursor-pointer rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-auto"
           >
             Generar reporte
           </button>
@@ -46,7 +46,7 @@ export default function NavigationButtons({
           <button
             type="button"
             onClick={onNext}
-            className="w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 sm:w-auto"
+            className="w-full cursor-pointer rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 sm:w-auto"
           >
             {nextLabel}
           </button>

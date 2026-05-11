@@ -35,14 +35,14 @@ export default function ProgressSteps({
           const isLocked = status === "locked";
 
           const buttonStyles = isActive
-            ? "border-slate-900 bg-slate-900 text-white"
+            ? "cursor-pointer border-slate-900 bg-slate-900 text-white"
             : isComplete
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-900"
               : isIncomplete
-                ? "border-red-200 bg-red-50 text-red-900"
+                ? "cursor-pointer border-red-200 bg-red-50 text-red-900"
                 : isLocked
                   ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50";
+                  : "cursor-pointer border-slate-200 bg-white text-slate-600 hover:bg-slate-50";
 
           const iconStyles = isActive
             ? "bg-white text-slate-900"

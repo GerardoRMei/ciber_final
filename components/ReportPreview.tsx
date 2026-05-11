@@ -59,7 +59,7 @@ ${report.recommendations
           <button
             type="button"
             onClick={handleCopy}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             Copiar reporte
           </button>
@@ -67,7 +67,7 @@ ${report.recommendations
           <button
             type="button"
             onClick={handlePrint}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="cursor-pointer rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
             Imprimir / Guardar PDF
           </button>
