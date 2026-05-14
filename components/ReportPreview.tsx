@@ -1,30 +1,43 @@
 "use client";
 
-import type { ReportData } from "@/lib/types";
+import { getRiskLevel } from "@/lib/scoring";
+import type {
+  AiReportAnalysis,
+  AnalysisSource,
+  ReportData,
+} from "@/lib/types";
+import RecommendationList from "./RecommendationList";
 import RiskBadge from "./RiskBadge";
 import ScoreBar from "./ScoreBar";
-import RecommendationList from "./RecommendationList";
 
 interface ReportPreviewProps {
   report: ReportData;
+  analysis?: AiReportAnalysis | null;
+  analysisSource?: AnalysisSource | null;
+  warnings?: string[];
 }
 
-export default function ReportPreview({ report }: ReportPreviewProps) {
+export default function ReportPreview({
+  report,
+  analysis,
+  analysisSource,
+  warnings = [],
+}: ReportPreviewProps) {
   const handlePrint = () => {
     window.print();
   };
 
   const handleCopy = async () => {
     const text = `
-Reporte de Buenas Prácticas BIA-DLP-DRP
+Reporte de Buenas Practicas BIA-DLP-DRP
 
-Organización: ${report.organizationName}
+Organizacion: ${report.organizationName}
 Sector: ${report.sector}
 Responsable: ${report.responsible}
 Fecha: ${report.date}
 
 Resumen Ejecutivo:
-${report.executiveSummary}
+${analysis?.executiveSummary ?? report.executiveSummary}
 
 Puntaje General: ${report.generalScore}/100
 Nivel General: ${report.generalLevel}
@@ -74,16 +87,36 @@ ${report.recommendations
         </div>
       </div>
 
+      {(analysisSource || warnings.length > 0) && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          {analysisSource && (
+            <p>
+              Fuente del analisis:{" "}
+              <span className="font-semibold">
+                {analysisSource === "openai"
+                  ? "OpenAI"
+                  : "Fallback local (sin OpenAI)"}
+              </span>
+            </p>
+          )}
+          {warnings.map((warning) => (
+            <p key={warning} className="mt-2 text-amber-700">
+              {warning}
+            </p>
+          ))}
+        </div>
+      )}
+
       <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm print:border-0 print:shadow-none">
         <header className="mb-8 border-b border-slate-200 pb-6">
           <div className="mb-3 flex flex-col justify-between gap-3 md:flex-row md:items-start">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Documento generado automáticamente
+                Documento generado automaticamente
               </p>
 
               <h1 className="mt-2 text-3xl font-bold text-slate-950">
-                Reporte de Buenas Prácticas BIA-DLP-DRP
+                Reporte de Buenas Practicas BIA-DLP-DRP
               </h1>
             </div>
 
@@ -91,9 +124,9 @@ ${report.recommendations
           </div>
 
           <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-600">
-            Este reporte presenta una primera aproximación al estado de la
-            organización en términos de análisis de impacto al negocio,
-            prevención de fuga de datos y recuperación ante desastres.
+            Este reporte presenta una primera aproximacion al estado de la
+            organizacion en terminos de analisis de impacto al negocio,
+            prevencion de fuga de datos y recuperacion ante desastres.
           </p>
         </header>
 
@@ -105,7 +138,7 @@ ${report.recommendations
 
             <dl className="space-y-2 text-sm">
               <div>
-                <dt className="font-semibold text-slate-500">Organización</dt>
+                <dt className="font-semibold text-slate-500">Organizacion</dt>
                 <dd className="text-slate-900">{report.organizationName}</dd>
               </div>
 
@@ -152,39 +185,99 @@ ${report.recommendations
           </h2>
 
           <p className="text-sm leading-7 text-slate-700">
-            {report.executiveSummary}
+            {analysis?.executiveSummary ?? report.executiveSummary}
           </p>
         </section>
 
+        {analysis && (
+          <>
+            <section className="mb-8">
+              <h2 className="mb-5 text-xl font-bold text-slate-900">
+                2. Hallazgos clave
+              </h2>
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+                {analysis.keyFindings.map((finding) => (
+                  <li key={finding}>{finding}</li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="mb-5 text-xl font-bold text-slate-900">
+                3. Acciones prioritarias
+              </h2>
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+                {analysis.priorityActions.map((action) => (
+                  <li key={action}>{action}</li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="mb-5 text-xl font-bold text-slate-900">
+                4. Roadmap 30/60/90 dias
+              </h2>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="font-semibold text-slate-900">30 dias</h3>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {analysis.roadmap30_60_90.d30.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="font-semibold text-slate-900">60 dias</h3>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {analysis.roadmap30_60_90.d60.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="font-semibold text-slate-900">90 dias</h3>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {analysis.roadmap30_60_90.d90.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
         <section className="mb-8">
           <h2 className="mb-5 text-xl font-bold text-slate-900">
-            2. Evaluación por área
+            5. Evaluacion por area
           </h2>
 
           <div className="space-y-5">
             <ScoreBar
-              label="BIA - Análisis de Impacto al Negocio"
+              label="BIA - Analisis de Impacto al Negocio"
               score={report.biaScore}
-              level={report.biaScore >= 80 ? "Crítico" : report.biaScore >= 60 ? "Alto" : report.biaScore >= 31 ? "Medio" : "Bajo"}
+              level={getRiskLevel(report.biaScore)}
             />
 
             <ScoreBar
-              label="DLP - Prevención de Pérdida de Datos"
+              label="DLP - Prevencion de Perdida de Datos"
               score={report.dlpScore}
-              level={report.dlpScore >= 80 ? "Crítico" : report.dlpScore >= 60 ? "Alto" : report.dlpScore >= 31 ? "Medio" : "Bajo"}
+              level={getRiskLevel(report.dlpScore)}
             />
 
             <ScoreBar
-              label="DRP - Plan de Recuperación ante Desastres"
+              label="DRP - Plan de Recuperacion ante Desastres"
               score={report.drpScore}
-              level={report.drpScore >= 80 ? "Crítico" : report.drpScore >= 60 ? "Alto" : report.drpScore >= 31 ? "Medio" : "Bajo"}
+              level={getRiskLevel(report.drpScore)}
             />
           </div>
         </section>
 
         <section className="mb-8">
           <h2 className="mb-5 text-xl font-bold text-slate-900">
-            3. Riesgos principales detectados
+            6. Riesgos principales detectados
           </h2>
 
           <RecommendationList
@@ -195,7 +288,7 @@ ${report.recommendations
 
         <section className="mb-8">
           <h2 className="mb-5 text-xl font-bold text-slate-900">
-            4. Recomendaciones de buenas prácticas
+            7. Recomendaciones de buenas practicas
           </h2>
 
           <RecommendationList recommendations={report.recommendations} />
@@ -203,15 +296,15 @@ ${report.recommendations
 
         <section>
           <h2 className="mb-3 text-xl font-bold text-slate-900">
-            5. Conclusión
+            8. Conclusion
           </h2>
 
           <p className="text-sm leading-7 text-slate-700">
-            La organización cuenta con una base inicial para identificar áreas
-            críticas de mejora. Se recomienda atender primero los riesgos con
-            prioridad alta o crítica, documentar los procedimientos y realizar
-            revisiones periódicas para fortalecer la continuidad del negocio, la
-            protección de datos y la recuperación ante incidentes.
+            La organizacion cuenta con una base inicial para identificar areas
+            criticas de mejora. Se recomienda atender primero los riesgos con
+            prioridad alta o critica, documentar los procedimientos y realizar
+            revisiones periodicas para fortalecer la continuidad del negocio, la
+            proteccion de datos y la recuperacion ante incidentes.
           </p>
         </section>
       </article>
