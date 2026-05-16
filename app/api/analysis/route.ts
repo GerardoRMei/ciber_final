@@ -8,12 +8,21 @@ import type {
 const DEFAULT_MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
 const DEFAULT_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS ?? "20000");
 
+const CONTEXT_FIELDS = new Set([
+  "general_concerns",
+  "bia_impact_scenario",
+  "dlp_data_flow",
+  "drp_scenario_response",
+]);
+
 function isAssessmentAnswers(value: unknown): value is AssessmentAnswers {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 
-  return Object.values(value).every(
-    (item) => typeof item === "string" && item.trim().length > 0
-  );
+  return Object.entries(value).every(([key, item]) => {
+    if (typeof item !== "string") return false;
+    if (CONTEXT_FIELDS.has(key)) return true;
+    return item.trim().length > 0;
+  });
 }
 
 function getFallbackAnalysis(
@@ -43,17 +52,18 @@ function getFallbackAnalysis(
         "Actualizar el plan de mejora continua con resultados de la evaluación.",
       ],
     },
+    conclusion: `La organización presenta un nivel de riesgo ${report.generalLevel} con un puntaje general de ${report.generalScore}/100. Se recomienda priorizar los controles críticos identificados en BIA (${report.biaScore}/100), DLP (${report.dlpScore}/100) y DRP (${report.drpScore}/100), documentar los procedimientos y establecer revisiones periódicas para fortalecer la continuidad del negocio.`,
   };
 }
 
-function cleanStringArray(value: unknown): string[] {
+function cleanStringArray(value: unknown, max = 8): string[] {
   if (!Array.isArray(value)) return [];
 
   return value
     .filter((item) => typeof item === "string")
     .map((item) => item.trim())
     .filter((item) => item.length > 0)
-    .slice(0, 8);
+    .slice(0, max);
 }
 
 function normalizeAnalysis(value: unknown): AiReportAnalysis | null {
@@ -61,9 +71,9 @@ function normalizeAnalysis(value: unknown): AiReportAnalysis | null {
 
   const raw = value as Record<string, unknown>;
   const executiveSummary =
-    typeof raw.executiveSummary === "string"
-      ? raw.executiveSummary.trim()
-      : "";
+    typeof raw.executiveSummary === "string" ? raw.executiveSummary.trim() : "";
+  const conclusion =
+    typeof raw.conclusion === "string" ? raw.conclusion.trim() : "";
 
   const roadmapRaw =
     raw.roadmap30_60_90 &&
@@ -81,6 +91,7 @@ function normalizeAnalysis(value: unknown): AiReportAnalysis | null {
       d60: cleanStringArray(roadmapRaw.d60),
       d90: cleanStringArray(roadmapRaw.d90),
     },
+    conclusion,
   };
 
   if (!analysis.executiveSummary) return null;
@@ -104,6 +115,27 @@ function extractJsonObject(content: string): string {
   return trimmed;
 }
 
+function buildContextSection(answers: AssessmentAnswers): string {
+  const lines: string[] = [];
+
+  if (answers.general_concerns?.trim()) {
+    lines.push(`Mayor preocupación de seguridad actual: ${answers.general_concerns.trim()}`);
+  }
+  if (answers.bia_impact_scenario?.trim()) {
+    lines.push(`Impacto concreto ante 24h de interrupción: ${answers.bia_impact_scenario.trim()}`);
+  }
+  if (answers.dlp_data_flow?.trim()) {
+    lines.push(`Flujo de información sensible: ${answers.dlp_data_flow.trim()}`);
+  }
+  if (answers.drp_scenario_response?.trim()) {
+    lines.push(`Respuesta real ante ransomware o caída total: ${answers.drp_scenario_response.trim()}`);
+  }
+
+  return lines.length > 0
+    ? `\nRespuestas abiertas de la organización:\n${lines.join("\n")}`
+    : "";
+}
+
 async function callOpenAiAnalysis(
   answers: AssessmentAnswers,
   localReport: ReturnType<typeof analyzeAssessment>["report"]
@@ -113,11 +145,13 @@ async function callOpenAiAnalysis(
     throw new Error("OPENAI_API_KEY is not configured.");
   }
 
+  const contextSection = buildContextSection(answers);
+
   const prompt = `
 Eres consultor senior de ciberseguridad para pymes.
-Debes analizar el contexto de la empresa y entregar un plan accionable 30/60/90 días.
+Analiza los datos cuantitativos (puntajes de riesgo) y el contexto cualitativo de la organización.
 
-Responde SOLO JSON válido, sin markdown, con esta forma exacta:
+Responde SOLO JSON válido, sin markdown, con esta estructura exacta:
 {
   "executiveSummary": "string",
   "keyFindings": ["string"],
@@ -126,20 +160,24 @@ Responde SOLO JSON válido, sin markdown, con esta forma exacta:
     "d30": ["string"],
     "d60": ["string"],
     "d90": ["string"]
-  }
+  },
+  "conclusion": "string"
 }
 
 Reglas:
-- idioma español neutro.
-- máximo 8 elementos por lista.
-- acciones concretas y ejecutables.
-- usar el contexto del cuestionario y los puntajes para priorizar.
+- Idioma español neutro.
+- Máximo 8 elementos por lista de strings.
+- executiveSummary: párrafo que describe el estado general considerando scores y contexto.
+- keyFindings: hallazgos concretos derivados de los datos, no genéricos.
+- priorityActions: acciones inmediatas ejecutables ordenadas por urgencia.
+- roadmap30_60_90: plan escalonado con acciones concretas por período.
+- conclusion: párrafo de cierre que sintetiza el estado actual, el camino a seguir y el valor de actuar ahora. Debe sentirse personalizado para esta organización.
 
 Datos de entrada:
-- Respuestas: ${JSON.stringify(answers)}
-- Puntajes: general=${localReport.generalScore}, BIA=${localReport.biaScore}, DLP=${localReport.dlpScore}, DRP=${localReport.drpScore}
-- Nivel general: ${localReport.generalLevel}
-- Riesgos principales: ${JSON.stringify(localReport.risks)}
+- Organización: ${localReport.organizationName} (sector: ${localReport.sector})
+- Puntajes: general=${localReport.generalScore}/100, BIA=${localReport.biaScore}/100, DLP=${localReport.dlpScore}/100, DRP=${localReport.drpScore}/100
+- Nivel general de riesgo: ${localReport.generalLevel}
+- Riesgos detectados: ${JSON.stringify(localReport.risks)}${contextSection}
 `.trim();
 
   const controller = new AbortController();
@@ -159,7 +197,7 @@ Datos de entrada:
           {
             role: "system",
             content:
-              "Eres un analista de ciberresiliencia. Debes responder exclusivamente JSON válido.",
+              "Eres un analista de ciberresiliencia. Responde exclusivamente JSON válido sin markdown.",
           },
           { role: "user", content: prompt },
         ],
@@ -255,22 +293,19 @@ export async function POST(request: Request) {
         : "OpenAI unavailable, fallback activated.";
     warnings.push(warningMessage);
 
-    const response: AnalysisApiResponse = {
-      ok: true,
-      analysis: fallback,
-      source: "local-fallback",
-      warnings,
-    };
-
-    return Response.json(response, { status: 200 });
+    return Response.json(
+      { ok: true, analysis: fallback, source: "local-fallback", warnings },
+      { status: 200 }
+    );
   }
 
-  const response: AnalysisApiResponse = {
-    ok: true,
-    analysis,
-    source: "openai",
-    warnings: warnings.length > 0 ? warnings : undefined,
-  };
-
-  return Response.json(response, { status: 200 });
+  return Response.json(
+    {
+      ok: true,
+      analysis,
+      source: "openai",
+      warnings: warnings.length > 0 ? warnings : undefined,
+    },
+    { status: 200 }
+  );
 }

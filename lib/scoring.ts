@@ -30,48 +30,46 @@ export interface AssessmentResult {
 }
 
 const scoringRules: ScoringRule[] = [
-  {
-    area: "bia",
-    answerId: "bia_impact",
-    weights: {
-      Bajo: 10,
-      Medio: 25,
-      Alto: 35,
-      Crítico: 45,
-    },
-    max: 45,
-  },
+  // ── BIA ──────────────────────────────────────────────────────────────────
   {
     area: "bia",
     answerId: "bia_rto_defined",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 25,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 25 },
     max: 25,
   },
   {
     area: "bia",
     answerId: "bia_rpo_defined",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 25,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 25 },
     max: 25,
   },
   {
     area: "bia",
     answerId: "bia_responsibles",
-    weights: {
-      Sí: 0,
-      Parcialmente: 10,
-      No: 20,
-    },
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
+    max: 20,
+  },
+  {
+    area: "bia",
+    answerId: "bia_dependencies",
+    // Alta dependencia externa sin alternativa = riesgo mayor
+    weights: { "Sin alternativas": 25, "Con alternativas": 10, No: 0 },
+    max: 25,
+  },
+  {
+    area: "bia",
+    answerId: "bia_staff_coverage",
+    weights: { Sí: 0, Parcialmente: 15, No: 25 },
+    max: 25,
+  },
+  {
+    area: "bia",
+    answerId: "bia_communication_plan",
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
     max: 20,
   },
 
+  // ── DLP ──────────────────────────────────────────────────────────────────
   {
     area: "dlp",
     answerId: "dlp_sensitive_data",
@@ -88,62 +86,59 @@ const scoringRules: ScoringRule[] = [
   {
     area: "dlp",
     answerId: "dlp_data_classification",
-    weights: {
-      Sí: 0,
-      Parcialmente: 20,
-      No: 35,
-    },
+    weights: { Sí: 0, Parcialmente: 20, No: 35 },
     max: 35,
   },
   {
     area: "dlp",
     answerId: "dlp_access_control",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 30,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 30 },
     max: 30,
   },
   {
     area: "dlp",
+    answerId: "dlp_mfa",
+    // Sin MFA es una de las brechas más explotadas
+    weights: { Sí: 0, Parcialmente: 20, No: 35 },
+    max: 35,
+  },
+  {
+    area: "dlp",
     answerId: "dlp_encryption",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 30,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 30 },
+    max: 30,
+  },
+  {
+    area: "dlp",
+    answerId: "dlp_third_party_access",
+    // Terceros sin controles = vector de riesgo alto
+    weights: { "Sin controles": 30, "Con controles": 10, No: 0 },
     max: 30,
   },
   {
     area: "dlp",
     answerId: "dlp_usb_policy",
-    weights: {
-      Sí: 0,
-      Parcialmente: 10,
-      No: 20,
-    },
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
     max: 20,
   },
   {
     area: "dlp",
     answerId: "dlp_monitoring",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 25,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 25 },
     max: 25,
   },
+  {
+    area: "dlp",
+    answerId: "dlp_data_retention",
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
+    max: 20,
+  },
 
+  // ── DRP ──────────────────────────────────────────────────────────────────
   {
     area: "drp",
     answerId: "drp_backups",
-    weights: {
-      Sí: 0,
-      Parcialmente: 25,
-      No: 40,
-    },
+    weights: { Sí: 0, Parcialmente: 25, No: 40 },
     max: 40,
   },
   {
@@ -160,42 +155,45 @@ const scoringRules: ScoringRule[] = [
   },
   {
     area: "drp",
+    answerId: "drp_offsite_backup",
+    // Respaldo solo local = catástrofe ante ransomware o siniestro físico
+    weights: { Sí: 0, Parcialmente: 15, No: 30 },
+    max: 30,
+  },
+  {
+    area: "drp",
     answerId: "drp_backup_testing",
-    weights: {
-      Sí: 0,
-      Parcialmente: 15,
-      No: 30,
-    },
+    weights: { Sí: 0, Parcialmente: 15, No: 30 },
     max: 30,
   },
   {
     area: "drp",
     answerId: "drp_documented_plan",
-    weights: {
-      Sí: 0,
-      Parcialmente: 20,
-      No: 35,
-    },
+    weights: { Sí: 0, Parcialmente: 20, No: 35 },
     max: 35,
   },
   {
     area: "drp",
+    answerId: "drp_incident_response",
+    weights: { Sí: 0, Parcialmente: 15, No: 30 },
+    max: 30,
+  },
+  {
+    area: "drp",
     answerId: "drp_recovery_order",
-    weights: {
-      Sí: 0,
-      Parcialmente: 10,
-      No: 20,
-    },
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
     max: 20,
   },
   {
     area: "drp",
     answerId: "drp_simulations",
-    weights: {
-      Sí: 0,
-      Parcialmente: 10,
-      No: 20,
-    },
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
+    max: 20,
+  },
+  {
+    area: "drp",
+    answerId: "drp_vendor_sla",
+    weights: { Sí: 0, Parcialmente: 10, No: 20 },
     max: 20,
   },
 ];
