@@ -177,6 +177,129 @@ export const recommendationRules: RecommendationRule[] = [
       priority: "Medio",
     },
   },
+
+  // ── Nuevas reglas BIA ────────────────────────────────────────────────────
+  {
+    id: "bia-dependencies",
+    answerId: "bia_dependencies",
+    triggers: ["Sin alternativas"],
+    recommendation: {
+      id: "rec-bia-dependencies",
+      area: "BIA",
+      title: "Reducir dependencias externas críticas sin alternativa",
+      description:
+        "La organización depende de proveedores sin plan de contingencia. Se recomienda identificar alternativas, negociar SLAs contractuales y documentar procedimientos manuales ante fallas del proveedor.",
+      priority: "Alto",
+    },
+  },
+  {
+    id: "bia-staff-coverage",
+    answerId: "bia_staff_coverage",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-bia-staff-coverage",
+      area: "BIA",
+      title: "Establecer personal de respaldo para roles críticos",
+      description:
+        "La ausencia de personal de respaldo crea puntos únicos de falla humana. Se recomienda capacitar a al menos una persona adicional por cada rol operativo crítico.",
+      priority: "Medio",
+    },
+  },
+  {
+    id: "bia-communication-plan",
+    answerId: "bia_communication_plan",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-bia-communication-plan",
+      area: "BIA",
+      title: "Definir protocolo de comunicación de crisis",
+      description:
+        "Se recomienda crear un árbol de comunicación que defina a quién notificar, en qué orden y por qué canal ante una interrupción grave: directivos, empleados, clientes y autoridades.",
+      priority: "Medio",
+    },
+  },
+
+  // ── Nuevas reglas DLP ────────────────────────────────────────────────────
+  {
+    id: "dlp-mfa",
+    answerId: "dlp_mfa",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-dlp-mfa",
+      area: "DLP",
+      title: "Implementar autenticación multifactor (MFA)",
+      description:
+        "El MFA es uno de los controles con mayor impacto en la reducción de brechas. Se recomienda activarlo en correo corporativo, VPN, sistemas críticos y administración en la nube como primer paso.",
+      priority: "Crítico",
+    },
+  },
+  {
+    id: "dlp-third-party",
+    answerId: "dlp_third_party_access",
+    triggers: ["Sin controles"],
+    recommendation: {
+      id: "rec-dlp-third-party",
+      area: "DLP",
+      title: "Controlar y auditar el acceso de terceros a datos sensibles",
+      description:
+        "Los proveedores con acceso sin restricciones son un vector frecuente de fuga. Se recomienda firmar NDAs, aplicar acceso mínimo necesario, registrar actividad y revisar accesos periódicamente.",
+      priority: "Alto",
+    },
+  },
+  {
+    id: "dlp-data-retention",
+    answerId: "dlp_data_retention",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-dlp-data-retention",
+      area: "DLP",
+      title: "Establecer política de retención y eliminación segura de datos",
+      description:
+        "Se recomienda definir por cuánto tiempo se conserva cada tipo de dato, cómo se elimina de forma segura y qué regulaciones aplican (LFPDPPP, RGPD, etc.).",
+      priority: "Medio",
+    },
+  },
+
+  // ── Nuevas reglas DRP ────────────────────────────────────────────────────
+  {
+    id: "drp-offsite-backup",
+    answerId: "drp_offsite_backup",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-drp-offsite-backup",
+      area: "DRP",
+      title: "Almacenar respaldos en ubicación separada o en la nube",
+      description:
+        "Los respaldos guardados solo localmente son destruidos por el mismo ransomware o desastre físico. Se recomienda seguir la regla 3-2-1: 3 copias, 2 medios distintos, 1 fuera de las instalaciones.",
+      priority: "Crítico",
+    },
+  },
+  {
+    id: "drp-incident-response",
+    answerId: "drp_incident_response",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-drp-incident-response",
+      area: "DRP",
+      title: "Crear procedimiento formal de respuesta a incidentes",
+      description:
+        "Se recomienda documentar las fases de respuesta: detección, contención, erradicación, recuperación y lecciones aprendidas. Incluir roles responsables y tiempos de acción esperados.",
+      priority: "Alto",
+    },
+  },
+  {
+    id: "drp-vendor-sla",
+    answerId: "drp_vendor_sla",
+    triggers: ["No", "Parcialmente"],
+    recommendation: {
+      id: "rec-drp-vendor-sla",
+      area: "DRP",
+      title: "Negociar y documentar SLAs con proveedores críticos",
+      description:
+        "Sin SLA contractual, la organización no tiene garantías de tiempo de respuesta ni compensaciones. Se recomienda exigir SLAs que incluyan disponibilidad, tiempo de resolución y penalizaciones.",
+      priority: "Medio",
+    },
+  },
 ];
 
 export const priorityWeight: Record<RiskLevel, number> = {

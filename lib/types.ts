@@ -17,6 +17,7 @@ export interface Question {
   type: QuestionType;
   placeholder?: string;
   options?: QuestionOption[];
+  optional?: boolean;
 }
 
 export interface ScoreItem {
@@ -59,6 +60,7 @@ export interface AiReportAnalysis {
     d60: string[];
     d90: string[];
   };
+  conclusion: string;
 }
 
 export type AnalysisSource = "openai" | "local-fallback";

@@ -135,6 +135,8 @@ export default function AssessmentPage() {
     if (questions.length === 0) return true;
 
     return questions.every((question) => {
+      if (question.optional) return true;
+
       const value = answers[question.id];
 
       return value !== undefined && value.trim().length > 0;
@@ -180,6 +182,7 @@ export default function AssessmentPage() {
       if (questions.length === 0) return true;
 
       return questions.every((question) => {
+        if (question.optional) return true;
         const value = answers[question.id];
         return value !== undefined && value.trim().length > 0;
       });
@@ -188,6 +191,7 @@ export default function AssessmentPage() {
     formSteps.forEach((step) => {
       const questions = questionsBySection[step];
       const complete = questions.every((question) => {
+        if (question.optional) return true;
         const value = answers[question.id];
         return value !== undefined && value.trim().length > 0;
       });
@@ -345,8 +349,8 @@ export default function AssessmentPage() {
       setAnalysisSource(null);
       setAnalysisWarnings([
         error instanceof Error
-          ? `No se pudo completar el analisis IA: ${error.message}`
-          : "No se pudo completar el analisis IA.",
+          ? `No se pudo completar el análisis IA: ${error.message}`
+          : "No se pudo completar el análisis IA.",
       ]);
     } finally {
       setIsGeneratingAnalysis(false);
@@ -416,12 +420,8 @@ export default function AssessmentPage() {
                 onNext={handleNext}
                 onGenerate={handleGenerateReport}
                 showGenerate={isDrpStep}
+                isGenerating={isGeneratingAnalysis}
               />
-              {isGeneratingAnalysis && (
-                <p className="mt-4 text-sm text-slate-600">
-                  Generando analisis contextual con IA...
-                </p>
-              )}
             </SectionCard>
           )}
 
