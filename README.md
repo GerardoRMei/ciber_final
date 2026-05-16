@@ -16,6 +16,14 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and set:
+
+- `OPENAI_API_KEY` (required for AI analysis)
+- `OPENAI_MODEL` (optional)
+- `OPENAI_TIMEOUT_MS` (optional)
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

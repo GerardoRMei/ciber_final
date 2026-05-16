@@ -50,6 +50,26 @@ export interface ReportData {
 }
 export type AssessmentAnswers = Record<string, string>;
 
+export interface AiReportAnalysis {
+  executiveSummary: string;
+  keyFindings: string[];
+  priorityActions: string[];
+  roadmap30_60_90: {
+    d30: string[];
+    d60: string[];
+    d90: string[];
+  };
+}
+
+export type AnalysisSource = "openai" | "local-fallback";
+
+export interface AnalysisApiResponse {
+  ok: boolean;
+  analysis: AiReportAnalysis;
+  source: AnalysisSource;
+  warnings?: string[];
+}
+
 export interface AssessmentStep {
   id: AssessmentSection;
   label: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import DemoDataBanner from "@/components/DemoDataBanner";
 import Header from "@/components/Header";
@@ -24,7 +24,13 @@ import {
   loadAssessment,
   saveAssessment,
 } from "@/lib/storage";
-import type { AssessmentAnswers, AssessmentSection } from "@/lib/types";
+import type {
+  AiReportAnalysis,
+  AnalysisApiResponse,
+  AnalysisSource,
+  AssessmentAnswers,
+  AssessmentSection,
+} from "@/lib/types";
 
 const sectionContent: Record<
   AssessmentSection,
@@ -88,13 +94,20 @@ export default function AssessmentPage() {
     useState<AssessmentSection>("general");
 
   const [answers, setAnswers] = useState<AssessmentAnswers>({});
-  const [loaded, setLoaded] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const initialAnswersRef = useRef<AssessmentAnswers>({});
 
   const [visitedSteps, setVisitedSteps] = useState<
     Partial<Record<AssessmentSection, boolean>>
   >({});
 
   const [reportGenerated, setReportGenerated] = useState(false);
+  const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
+  const [analysis, setAnalysis] = useState<AiReportAnalysis | null>(null);
+  const [analysisSource, setAnalysisSource] = useState<AnalysisSource | null>(
+    null
+  );
+  const [analysisWarnings, setAnalysisWarnings] = useState<string[]>([]);
 
   const result = useMemo(() => analyzeAssessment(answers), [answers]);
 
@@ -102,20 +115,15 @@ export default function AssessmentPage() {
   const content = sectionContent[currentStep];
 
   useEffect(() => {
-    const savedAnswers = loadAssessment();
-
-    if (Object.keys(savedAnswers).length > 0) {
-      setAnswers(savedAnswers);
-    }
-
-    setLoaded(true);
+    initialAnswersRef.current = loadAssessment();
+    setAnswers(initialAnswersRef.current);
+    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-
+    if (!isHydrated) return;
     saveAssessment(answers);
-  }, [answers, loaded]);
+  }, [answers, isHydrated]);
 
   function isFormStep(step: AssessmentSection) {
     return formSteps.includes(step);
@@ -166,9 +174,25 @@ export default function AssessmentPage() {
 
   const statusByStep = useMemo(() => {
     const statuses: Partial<Record<AssessmentSection, StepStatus>> = {};
+    const areFormsComplete = formSteps.every((step) => {
+      const questions = questionsBySection[step];
+
+      if (questions.length === 0) return true;
+
+      return questions.every((question) => {
+        const value = answers[question.id];
+        return value !== undefined && value.trim().length > 0;
+      });
+    });
 
     formSteps.forEach((step) => {
-      if (isSectionComplete(step)) {
+      const questions = questionsBySection[step];
+      const complete = questions.every((question) => {
+        const value = answers[question.id];
+        return value !== undefined && value.trim().length > 0;
+      });
+
+      if (complete) {
         statuses[step] = "complete";
         return;
       }
@@ -181,8 +205,10 @@ export default function AssessmentPage() {
       statuses[step] = "available";
     });
 
-    statuses.results = canAccessResultsAndReport() ? "available" : "locked";
-    statuses.report = canAccessResultsAndReport() ? "available" : "locked";
+    statuses.results =
+      areFormsComplete && reportGenerated ? "available" : "locked";
+    statuses.report =
+      areFormsComplete && reportGenerated ? "available" : "locked";
 
     return statuses;
   }, [answers, visitedSteps, reportGenerated]);
@@ -194,12 +220,18 @@ export default function AssessmentPage() {
     }));
 
     setReportGenerated(false);
+    setAnalysis(null);
+    setAnalysisSource(null);
+    setAnalysisWarnings([]);
   }
 
   function handleLoadDemo() {
     setAnswers(demoAnswers);
     setVisitedSteps({});
     setReportGenerated(false);
+    setAnalysis(null);
+    setAnalysisSource(null);
+    setAnalysisWarnings([]);
     setCurrentStep("general");
   }
 
@@ -207,6 +239,9 @@ export default function AssessmentPage() {
     setAnswers({});
     setVisitedSteps({});
     setReportGenerated(false);
+    setAnalysis(null);
+    setAnalysisSource(null);
+    setAnalysisWarnings([]);
     clearAssessment();
     setCurrentStep("general");
   }
@@ -265,7 +300,7 @@ export default function AssessmentPage() {
     setCurrentStep(nextStep);
   }
 
-  function handleGenerateReport() {
+  async function handleGenerateReport() {
     markAllFormStepsAsVisited();
 
     if (!areFormStepsComplete()) {
@@ -278,6 +313,43 @@ export default function AssessmentPage() {
       }
 
       return;
+    }
+
+    setIsGeneratingAnalysis(true);
+    setAnalysisWarnings([]);
+
+    try {
+      const response = await fetch("/api/analysis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ answers }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Analysis request failed with status ${response.status}`);
+      }
+
+      const payload = (await response.json()) as AnalysisApiResponse;
+
+      if (!payload.ok) {
+        throw new Error("Analysis API returned an invalid response.");
+      }
+
+      setAnalysis(payload.analysis);
+      setAnalysisSource(payload.source);
+      setAnalysisWarnings(payload.warnings ?? []);
+    } catch (error) {
+      setAnalysis(null);
+      setAnalysisSource(null);
+      setAnalysisWarnings([
+        error instanceof Error
+          ? `No se pudo completar el analisis IA: ${error.message}`
+          : "No se pudo completar el analisis IA.",
+      ]);
+    } finally {
+      setIsGeneratingAnalysis(false);
     }
 
     setReportGenerated(true);
@@ -345,6 +417,11 @@ export default function AssessmentPage() {
                 onGenerate={handleGenerateReport}
                 showGenerate={isDrpStep}
               />
+              {isGeneratingAnalysis && (
+                <p className="mt-4 text-sm text-slate-600">
+                  Generando analisis contextual con IA...
+                </p>
+              )}
             </SectionCard>
           )}
 
@@ -417,7 +494,12 @@ export default function AssessmentPage() {
               title={content.title}
               subtitle={content.subtitle}
             >
-              <ReportPreview report={result.report} />
+              <ReportPreview
+                report={result.report}
+                analysis={analysis}
+                analysisSource={analysisSource}
+                warnings={analysisWarnings}
+              />
 
               <NavigationButtons
                 showBack
